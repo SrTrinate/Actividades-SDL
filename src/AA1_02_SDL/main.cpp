@@ -5,6 +5,7 @@
 #include <exception>
 #include <iostream>
 #include <string>
+#include <time.h>
 
 //Game general information
 #define SCREEN_WIDTH 800
@@ -49,16 +50,36 @@ int main(int, char*[])
 	vec2 mouseCoords;
 	//-->Animated Sprite ---
 
+	SDL_Texture *playerTexture{ IMG_LoadTexture(m_renderer, "../../res/img/sp01.png") };
+	SDL_Rect playerRect, playerPosition;
+	int textWidth, textHeight, frameWidth, frameHeight;
+	SDL_QueryTexture(playerTexture, NULL, NULL, &textWidth, &textHeight);
+	frameWidth = textWidth / 6;
+	frameHeight = textHeight / 1;
+	playerPosition.x = playerPosition.y = 0;
+	playerRect.x = playerRect.y = 0;
+	playerPosition.h = playerRect.h = frameHeight;
+	playerPosition.w = playerRect.w = frameWidth;
+	int frameTime = 0;
 	// --- TEXT ---
+
 	if (TTF_Init()== -1) throw "No es pot inicialitzar SDL_ttf";
 	TTF_Font *font{ TTF_OpenFont("../../res/ttf/saiyan.ttf", 80) };
 	if (font == nullptr)throw "No es pot inicialitzar the TTF_Font";
 	SDL_Surface *tmpSurf{ TTF_RenderText_Blended(font,"My first SDL game", SDL_Color{255,150,0,255}) };
+	
+	if (tmpSurf == nullptr)throw "Unable to create the SDL text surfase";
+	
+	
+	tmpSurf = TTF_RenderText_Blended(font, "Play", SDL_Color{ 255,150,0,255 });
 	if (tmpSurf == nullptr)throw "Unable to create the SDL text surfase";
 	SDL_Texture *textTexture{ SDL_CreateTextureFromSurface(m_renderer, tmpSurf) };
-	SDL_Rect textRect{ 100, 50, tmpSurf->w,tmpSurf->h };
+	SDL_Rect textRect{ 100, 100, tmpSurf->w,tmpSurf->h };
+
+
 	SDL_FreeSurface(tmpSurf);
 	TTF_CloseFont(font);
+	
 	// --- AUDIO ---
 	const Uint8 mixFlags{ MIX_INIT_MP3 | MIX_INIT_OGG };
 	if (!(Mix_Init(mixFlags)&mixFlags)) throw "Mixer can't initialize";
@@ -93,6 +114,15 @@ int main(int, char*[])
 		// UPDATE
 		playerRect.x += ((mouseCoords.x - playerRect.w/2) - playerRect.x) / 10;
 		playerRect.y += ((mouseCoords.y - playerRect.h/2) - playerRect.y) / 10;
+
+		frameTime++;
+		if (FPS / frameTime <= 9) {
+			frameTime = 0;
+			playerRect.x += frameWidth;
+			if (playerRect.x >= textWidth)
+				playerRect.x = 0;
+
+		}
 		// DRAW
 		SDL_RenderClear(m_renderer);
 		//Background
@@ -101,7 +131,8 @@ int main(int, char*[])
 		// FONT
 		SDL_RenderCopy(m_renderer, playerTexture, nullptr, &playerRect);
 		SDL_RenderPresent(m_renderer);
-		
+		// ANIMATED SPRITE
+		SDL_RenderCopy(m_renderer, playerTexture, &playerRect, &playerPosition);
 	}
 
 	// --- DESTROY ---
